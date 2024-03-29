@@ -52,7 +52,7 @@ en:
         char_on_roster: "This character is on the roster."
         char_gone: "This character is retired."
         char_dead: "This character is deceased."
-        char_is_npc: "This character is a NPC."
+        char_is_npc: "This character is an NPC."
         char_is_admin: "This character is a game administrator."
         char_is_playerbit: "This character is a player bit."
         char_not_approved: "This character is not yet approved."

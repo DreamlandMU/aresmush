@@ -70,6 +70,7 @@ module AresMUSH
       vs_name2 = (request.args[:vs_name2] || "").titlecase
       pc_name = request.args[:pc_name] || ""
       pc_skill = request.args[:pc_skill] || ""
+      no_draw = request.args[:no_draw] || false
       
       # ------------------
       # VS ROLL
@@ -98,6 +99,25 @@ module AresMUSH
         
         successes1 = FS3Skills.get_success_level(die_result1)
         successes2 = FS3Skills.get_success_level(die_result2)
+
+        if (no_draw == 'true')
+          Global.logger.info "Round 1: #{successes1}, #{successes2}."
+          i = 1
+          until successes1 != successes2 do
+            die_result1 = FS3Skills.parse_and_roll(model1, vs_roll1)
+            die_result2 = FS3Skills.parse_and_roll(model2, vs_roll2)
+
+            if (!die_result1 || !die_result2)
+              return { error: t('fs3skills.unknown_roll_params') }
+            end
+
+            successes1 = FS3Skills.get_success_level(die_result1)
+            successes2 = FS3Skills.get_success_level(die_result2)
+
+            i += 1
+            Global.logger.info "Round #{i}: #{successes1}, #{successes2}."
+          end
+        end
           
         results = FS3Skills.opposed_result_title(vs_name1, successes1, vs_name2, successes2)
         
@@ -108,7 +128,9 @@ module AresMUSH
            :roll2 => vs_roll2,
            :dice1 => FS3Skills.print_dice(die_result1),
            :dice2 => FS3Skills.print_dice(die_result2),
-           :result => results)  
+           :result => results,
+           :roller => enactor.name
+        )  
 
       # ------------------
       # PC ROLL
@@ -124,10 +146,12 @@ module AresMUSH
         roll_result = FS3Skills.get_success_level(roll)
         success_title = FS3Skills.get_success_title(roll_result)
         message = t('fs3skills.simple_roll_result', 
-          :name => char ? char.name : "#{pc_name} (#{enactor.name})",
+#          :name => char ? char.name : "#{pc_name} (#{enactor.name})",
+          :name => char ? char.name : "#{pc_name}",
           :roll => pc_skill,
           :dice => FS3Skills.print_dice(roll),
-          :success => success_title
+          :success => success_title,
+          :roller => enactor.name
           )
           
       # ------------------
@@ -142,7 +166,8 @@ module AresMUSH
           :name => enactor.name,
           :roll => roll_str,
           :dice => FS3Skills.print_dice(roll),
-          :success => success_title
+          :success => success_title,
+          :roller => enactor.name
           )
       end
       

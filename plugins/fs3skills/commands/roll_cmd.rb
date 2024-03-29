@@ -41,10 +41,12 @@ module AresMUSH
         success_level = FS3Skills.get_success_level(die_result)
         success_title = FS3Skills.get_success_title(success_level)
         message = t('fs3skills.simple_roll_result', 
-          :name => char ? char.name : "#{self.name} (#{enactor_name})",
+#          :name => char ? char.name : "#{self.name} (#{enactor_name})",
+         :name => char ? char.name : "#{self.name}", 
           :roll => self.roll_str,
           :dice => FS3Skills.print_dice(die_result),
-          :success => success_title
+          :success => success_title,
+          :roller => enactor.name
         )
         FS3Skills.emit_results message, client, enactor_room, self.private_roll
       end

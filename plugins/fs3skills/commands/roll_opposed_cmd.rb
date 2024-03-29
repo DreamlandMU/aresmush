@@ -4,7 +4,7 @@ module AresMUSH
     class OpposedRollCmd
       include CommandHandler
       
-      attr_accessor :name1, :name2, :roll_str1, :roll_str2, :private_roll
+      attr_accessor :name1, :name2, :roll_str1, :roll_str2, :private_roll, :no_draw
 
       def parse_args
         args = cmd.parse_args( /(?<name1>[^\/]+)\/(?<str1>.+) vs (?<name2>[^\/]+)?\/?(?<str2>.+)/ )
@@ -13,6 +13,7 @@ module AresMUSH
         self.name1 = titlecase_arg(args.name1)
         self.name2 = titlecase_arg(args.name2)
         self.private_roll = cmd.switch_is?("private")
+        self.no_draw = cmd.switch_is?("nodraw")
       end
 
       def required_args
@@ -20,7 +21,6 @@ module AresMUSH
       end
       
       def handle
-        
         result = ClassTargetFinder.find(self.name1, Character, enactor)
         model1 = result.target
         if (!model1 && !self.roll_str1.is_integer?)
@@ -49,6 +49,19 @@ module AresMUSH
           
         successes1 = FS3Skills.get_success_level(die_result1)
         successes2 = FS3Skills.get_success_level(die_result2)
+        if (no_draw)
+          until successes1 != successes2 do
+            die_result1 = FS3Skills.parse_and_roll(model1, self.roll_str1)
+            die_result2 = FS3Skills.parse_and_roll(model2, self.roll_str2)
+            if (!die_result1 || !die_result2)
+              client.emit_failure t('fs3skills.unknown_roll_params')
+              return
+            end
+
+            successes1 = FS3Skills.get_success_level(die_result1)
+            successes2 = FS3Skills.get_success_level(die_result2)
+          end
+        end
             
         results = FS3Skills.opposed_result_title(self.name1, successes1, self.name2, successes2)
           
@@ -59,7 +72,9 @@ module AresMUSH
            :roll2 => self.roll_str2,
            :dice1 => FS3Skills.print_dice(die_result1),
            :dice2 => FS3Skills.print_dice(die_result2),
-           :result => results)  
+           :result => results,
+           :roller => enactor.name
+        )  
           
         FS3Skills.emit_results message, client, enactor_room, self.private_roll
       end
