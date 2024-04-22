@@ -85,10 +85,13 @@ module AresMUSH
       end
       
       def format_attr(a, i)
-        name = "%xh#{a.name}:%xn"
         linebreak = i % 2 == 1 ? "" : "%r"
+        if (@client.screen_reader)
+          return "#{linebreak}#{a.name}: #{a.rating_name} :: "
+        end
+        name = "%xh#{a.name}:%xn"
         rating_text = "#{a.rating_name}"
-        rating_dots = @client.screen_reader ? a.rating : a.print_rating
+        rating_dots = a.print_rating
         "#{linebreak}#{left(name, 14)} #{left(rating_dots, 8)} #{left(rating_text,16)}"
       end
       
@@ -97,8 +100,14 @@ module AresMUSH
         name = FS3Skills.special_names.has_key?(s.name) ? "%xh#{FS3Skills.special_names[s.name]}%xn" : "%xh#{s.name}:%xn"
         linked_attr = show_linked_attr ? print_linked_attr(s) : ""
         linebreak = i % 2 == 1 ? "" : "%r"
+        
+        if (@client.screen_reader)
+          return "#{linebreak}#{s.name}: #{s.rating_name} #{linked_attr} :: "
+        end
+                
+        name = "%xh#{s.name}:%xn"
         rating_text = "#{s.rating_name}#{linked_attr}"
-        rating_dots = @client.screen_reader ? s.rating : s.print_rating
+        rating_dots = s.print_rating
         "#{linebreak}#{left(name, 14)} #{left(rating_dots, 8)} #{left(rating_text, 16)}"
       end
       
