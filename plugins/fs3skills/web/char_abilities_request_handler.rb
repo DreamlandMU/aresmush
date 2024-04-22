@@ -22,6 +22,7 @@ module AresMUSH
       
         [ char.fs3_attributes, char.fs3_action_skills, char.fs3_background_skills, char.fs3_languages, char.fs3_advantages ].each do |list|
           list.each do |a|
+            name = FS3Skills.special_names.has_key?(a.name) ? FS3Skills.special_names[a.name] : a.name
             abilities << a.name
           end
         end

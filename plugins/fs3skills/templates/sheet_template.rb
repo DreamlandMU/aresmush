@@ -93,7 +93,8 @@ module AresMUSH
       end
       
       def format_skill(s, i, show_linked_attr = false)
-        name = "%xh#{s.name}:%xn"
+        # Allow specially formatted names
+        name = FS3Skills.special_names.has_key?(s.name) ? "%xh#{FS3Skills.special_names[s.name]}%xn" : "%xh#{s.name}:%xn"
         linked_attr = show_linked_attr ? print_linked_attr(s) : ""
         linebreak = i % 2 == 1 ? "" : "%r"
         rating_text = "#{s.rating_name}#{linked_attr}"

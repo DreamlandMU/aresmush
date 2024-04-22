@@ -18,7 +18,7 @@ module AresMUSH
       def group_levels(type, levels)
         groups = type.all
            .select { |s| s.character && s.character.is_approved? && s.character.is_active? }
-           .group_by { |a| a.name }
+           .group_by { |a| FS3Skills.special_names.has_key?(a.name) ? FS3Skills.special_names[a.name] : a.name }
            .sort
            
         everybody = {}

@@ -11,7 +11,9 @@ module AresMUSH
           specialties: a['specialties'] ? a['specialties'].join(', ') : nil,
         }}
         languages = FS3Skills.languages.sort_by { |a| a['name'] }.map { |a| { name: a['name'], description: a['desc'] } }
-        advantages = FS3Skills.advantages.sort_by { |a| a['name'] }.map { |a| { name: a['name'], description: a['desc'] } }
+        advantages = FS3Skills.advantages.sort_by { |a| a['name'] }.map { |a| {
+          name: FS3Skills.special_names.has_key?(a['name']) ? FS3Skills.special_names[a['name']] : a['name'], 
+          description: Website.format_markdown_for_html(a['desc']) } }
         
         {
           attrs_blurb: Website.format_markdown_for_html(FS3Skills.attr_blurb),

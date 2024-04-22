@@ -10,6 +10,10 @@ module AresMUSH
         super File.dirname(__FILE__) + "/skills_census.erb"
       end
 
+      def display_name(name)
+        FS3Skills.special_names.has_key?(name) ? "%xh#{FS3Skills.special_names[name]}:%xn" : "%xh#{name}:%xn"
+      end
+
       def people_skills(people)
         display = {}
         people.each do |p|

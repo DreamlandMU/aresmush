@@ -3,7 +3,7 @@
 <%= divider %>
 
 <% skills.each do |name, people| %>
-%xh<%= name %>%xn
+%xh<%= display_name(name) %>%xn
 <% people_skills(people).sort.each do |rating, names|  %>
    <%= rating %>: <%= names.join(', ') %>
 <% end %>

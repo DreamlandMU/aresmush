@@ -11,6 +11,7 @@ module AresMUSH
       end
               
       def display(a)
+        name = FS3Skills.special_names.has_key?(a.name) ? FS3Skills.special_names[a.name] : a.name
         "#{left(a.name, 20)} #{progress(a)} #{detail(a)} #{days_left(a)}"
       end
       

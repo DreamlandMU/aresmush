@@ -56,7 +56,7 @@ module AresMUSH
       def get_ability_list(list, include_specs = false)        
         list.to_a.sort_by { |a| a.name }.map { |a| 
           { 
-            name: a.name, 
+            name: FS3Skills.special_names.has_key?(a.name) ? FS3Skills.special_names[a.name] : a.name, 
             rating: a.rating, 
             rating_name: a.rating_name,
             specialties: include_specs ? a.specialties.join(", ") : nil,
@@ -66,7 +66,7 @@ module AresMUSH
       
       def get_xp_list(char, list)
         list.to_a.sort_by { |a| a.name }.map { |a| {
-          name: a.name,
+          name: FS3Skills.special_names.has_key?(a.name) ? FS3Skills.special_names[a.name] : a.name,
           rating: a.rating,
           can_raise: !FS3Skills.check_can_learn(char, a.name, a.rating),
           progress: a.xp_needed ? a.xp * 100.0 / a.xp_needed : 0,
