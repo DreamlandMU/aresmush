@@ -20,6 +20,9 @@ module AresMUSH
       count = scenes.count
       
       Achievements.award_achievement(char, "scene_participant_#{scene.scene_type.downcase}")
+      if (count == 69)
+        Achievements.award_achievement(char, "story-69")
+      end
       Achievements.achievement_levels("scene_participant").reverse.each do |level|
         if ( count >= level )
           Achievements.award_achievement(char, "scene_participant", level)

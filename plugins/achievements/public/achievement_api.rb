@@ -34,7 +34,7 @@ module AresMUSH
           achievement = Achievement.create(character: char, type: type, name: name, message: message, count: count)
         end
 
-        Login.notify(char, :achievement, t('achievements.achievement_noification_message', :message => message), achievement.id)
+        Login.notify(char, :achievement, t('achievements.achievement_notification_message', :message => message), achievement.id)
         
         notification = t('achievements.achievement_earned', :name => char.name, :message => message)
         Channels.announce_notification(notification)

@@ -14,10 +14,10 @@ en:
         
         wound_mod: "Wound Modifier:"
         healed_wound: "%xh%xxHealed%xn"
-        graze_wound: "%xhGraze%xn"
-        flesh_wound: "%xgFlesh Wound%xn"
-        impaired_wound: "%xyImpaired%xn"
-        incap_wound: "%xrIncapacitated%xn"
+        graze_wound: "%xhSuperficial%xn"
+        flesh_wound: "%xgLight%xn"
+        impaired_wound: "%xyMedium%xn"
+        incap_wound: "%xrHeavy%xn"
         
         patient_must_pass: "Patients must pass in order to be treated."
         cant_treat_while_fighting: "%{healer} attempts to treat %{patient} but they're moving around too much."
@@ -298,6 +298,7 @@ en:
         attack_special_crew: "(aiming for crew)"
         attack_special_mount: "(aiming for mount)"
         invalid_attack_special: "That is not a valid attack special."
+        attack_redirected: "%{protector} steps in front of the attack!"
         attack_missed: "%{name} attacks %{target} with %{weapon} but MISSES!"
         attack_dodged: "%{name} attacks %{target} with %{weapon} but %{target} EVADES!"
         attack_dodged_easily: "%{name} attacks %{target} with %{weapon} but %{target} EVADES EASILY!"
@@ -305,10 +306,10 @@ en:
         attack_hits: "%{name} attacks %{target} with %{weapon} and HITS!  %{damage} wound to %{hitloc}. %{armor}"
         attack_hits_cover: "%{name} attacks %{target} with %{weapon} but hits the COVER they're behind."
         attack_hits_mount: "%{name} attacks %{target} with %{weapon} and hits their MOUNT. %{effect}"
-        
+        counter_attack: "%{defender} COUNTERS %{attacker}!"
         mount_ko: "(Mount %xrKOed%xn - %xyImpaired%xn wound from fall damage)"
         mount_injured: "(Mount INJURED)"
-        
+        combined_attack_and_counter: "%{attacker} attacks %{target} with %{weapon} but %{target} counter-attacks and %{counter_result}"
         burst_fire_not_allowed: "You need an automatic weapon to do burst or fullauto fire."
         invalid_called_shot_loc: "That is not a valid called shot location.  See combat/hitlocs <target>."
         no_fullauto_called_shots: "You can't do called shots with bursts or multiple targets."
@@ -412,3 +413,12 @@ en:
         
         cant_link_scene: "You are not a part of that scene, so you can't link combat to it."
         unrecognized_combat_cmd: "That is not a valid combat command."
+
+        # ----------------------------
+        # Protect
+        # ----------------------------
+        
+        protect_action_msg_long: "%{name} protects %{targets}."
+        protect_action_msg_short: "Protect %{targets}"
+        protect_successful_msg: "%{name} is %xyprotecting%xn %{target}."
+        attack_redirected: "%{protector} takes an attack meant for %{target}!"

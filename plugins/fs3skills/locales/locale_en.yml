@@ -64,10 +64,23 @@ en:
         opposed_victory: "%x83Victory for %{name}.%xn"
         opposed_crushing_victory: "%x51Crushing Victory for %{name}.%xn"
         
-        simple_roll_result: "%xb<FS3> %xn%{name} rolls %{roll}: %{success} (%{dice}) %x247[Rolled by %{roller}]%xn"
+        simple_roll_result: "%xb<FS3> %xn%{name} rolls %{roll} to %{reason}: %{success} (%{dice}) %x247[Rolled by %{roller}]%xn"
+        simple_roll_result_no_reason: "%xb<FS3> %xn%{name} rolls %{roll}: %{success} (%{dice}) %x247[Rolled by %{roller}]%xn"
         opposed_roll_result: "%xb<FS3> %xn%{name1} rolls %{roll1} (%{dice1}) vs %{name2}'s %{roll2} (%{dice2})%R%xb<FS3>%xn %{result} %x247[Rolled by %{roller}]%xn"
-                
         unknown_roll_params: "Can't figure out what you're trying to roll. You can specify a single ability, an optional ruling attribute, and an optional modifier.  See 'help roll' for more details."
+
+        character_not_found: "Character %{name} not found. Group rolls are only available for player characters."
+        group_roll_start_reason: "%xb<FS3> %xn%{roller} leads a Group Action in %{roll} to %{reason}!"
+        group_roll_start_no_reason: "%xb<FS3> %xn%{roller} leads a Group Action in %{roll}!"
+        group_roll_individual_result: "%xb<FS3> %xn%{name}: %{success} (%{dice})"
+        group_roll_best_result: "%xb<FS3> %xnThe best result is %{name}'s %{success}!"
+        group_roll_complication_avoided: "%xb<FS3> %xn%{complications} complication averted!"
+        group_roll_complications_avoided: "%xb<FS3> %xn%{complications} complications averted!"
+        group_roll_minor_successes: "%xb<FS3>%xn %{count} other complications were averted."
+        group_roll_minor_success: "%xb<FS3>%xn %{count} other complication was averted."
+        group_roll_complication: "%xb<FS3>%xn The group roll resulted in a complication!"
+        group_roll_all_botched: "%xb<FS3> %xnLook... I don't know how this happened, but it looks like everyone botched their roll. We all need to step back, take a moment to ourselves, and just wonder what set of circumstances has led to this. I can't even begin to imagine what's about to happen as a result of this, but we all look forward to finding out. May god have mercy on our souls."
+
 
         npc: "%{name} (a NPC)"
         numbers_only_for_npc_skills: "Use a number for a NPC skill, like Badguy/3."
@@ -97,11 +110,9 @@ en:
         invalid_luck_points: "That is not a valid number of luck points."
         luck_awarded: "%{luck} luck points awarded to %{name} for %{reason}."
         luck_award_mail_subject: "Luck Points Awarded"
-        not_enough_points: "You don't have any luck points."
-        #luck_point_spent: 
-        #    one: "%{name} spends a luck point!"
-        #    other: "%{name} spends %{count} luck points!"
+        not_enough_points: "You don't have enough luck points."
         luck_point_spent: "%{name} spends a luck point on %{reason}."
+        luck_points_spent: "%{name} spends %{amount} luck points on %{reason}."
         luck_job_title: "Luck Spent - %{name}"
             
         # ------------------------------------------------------

@@ -38,11 +38,16 @@ module AresMUSH
       when "reset"
         return ResetCmd
       when "roll"
-        if (cmd.args =~ / vs /)
-          return OpposedRollCmd
-        else
-          return RollCmd
-        end
+        case cmd.switch
+          when "group"
+            return GroupRollCmd
+          when "private", nil
+            if (cmd.args =~ / vs /)
+              return OpposedRollCmd
+            else
+              return RollCmd
+            end
+        end      
       when "sheet"
         return SheetCmd
       when "skill"
@@ -85,6 +90,8 @@ module AresMUSH
       case request.cmd
       when "abilities"
         return AbilitiesRequestHandler
+      when "altAbilityList"
+        return CharAltAbilitiesRequestHandler
       when "addJobRoll"
         return AddJobRollRequestHandler
       when "addSceneRoll"

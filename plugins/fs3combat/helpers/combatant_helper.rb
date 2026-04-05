@@ -124,6 +124,9 @@ module AresMUSH
           combatant.action_klass == "AresMUSH::FS3Combat::SubdueAction")
           action_mod = 3
       end
+      if combatant.action_klass == "AresMUSH::FS3Combat::ProtectAction"
+       action_mod = 15
+       end
       weapon_mod = FS3Combat.weapon_stat(combatant.weapon, "init_mod") || 0
       gm_mod = combatant.initiative_mod
       roll = combatant.roll_ability(ability, weapon_mod + action_mod + luck_mod + combatant.total_damage_mod + gm_mod)

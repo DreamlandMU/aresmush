@@ -1,8 +1,7 @@
 module AresMUSH
-  
   class Combatant < Ohm::Model
     include ObjectModel
-      
+
     attribute :action_klass
     attribute :action_args    
     attribute :combatant_type
@@ -23,34 +22,28 @@ module AresMUSH
     attribute :team, :type => DataType::Integer, :default => 1
     attribute :stress, :type => DataType::Integer, :default => 0
     attribute :freshly_damaged, :type => DataType::Boolean, :default => false
-    
     attribute :damage_lethality_mod, :type => DataType::Integer, :default => 0
     attribute :defense_mod, :type => DataType::Integer, :default => 0
     attribute :attack_mod, :type => DataType::Integer, :default => 0
     attribute :initiative_mod, :type => DataType::Integer, :default => 0
-        
+
     reference :subdued_by, "AresMUSH::Combatant"
     reference :aim_target, "AresMUSH::Combatant"
     reference :character, "AresMUSH::Character"
     reference :combat, "AresMUSH::Combat"
     reference :npc, "AresMUSH::Npc"
-
     reference :piloting, "AresMUSH::Vehicle"
     reference :riding_in, "AresMUSH::Vehicle"
-    
     attribute :damaged_by, :type => DataType::Array, :default => []
+    attribute :protectors, :type => DataType::Array, :default => [] # New attribute to store multiple protectors
 
-    # DEPRECATED - Do Not Use
-    attribute :distraction
-
-        
     before_delete :cleanup
-        
+
     def cleanup
       self.clear_mock_damage
       self.npc.delete if self.npc
     end
-    
+
     def weapon
       specials = self.weapon_specials || []
       special_text = specials.empty? ? nil : "+#{specials.join("+")}"
@@ -201,7 +194,36 @@ module AresMUSH
     def log(msg)
       self.combat.log(msg)
     end
-    
+
+    def KO_Threshold
+      is_npc? ? self.npc.KO_Threshold : 0  # Ensure it returns a default value of 0 if not an NPC
+    end
+
+    # New methods to manage multiple protectors
+    def add_protector(protector)
+      protectors = self.protectors || []
+      protectors << protector.id
+      self.update(protectors: protectors.uniq)
+    end
+
+    def remove_protector(protector)
+      protectors = self.protectors || []
+      protectors.delete(protector.id)
+      self.update(protectors: protectors)
+    end
+
+    def clear_protectors
+      self.update(protectors: [])
+    end
+
+    def get_protectors
+      self.protectors.map { |id| Combatant[id] }
+    end
+
+    def is_protected?
+      !self.protectors.empty?
+    end
+
     # Private
     
     def get_action_instance
@@ -209,6 +231,5 @@ module AresMUSH
       klass = FS3Combat.const_get(self.action_klass)
       a = klass.new(self, self.action_args)
     end
-    
   end
 end

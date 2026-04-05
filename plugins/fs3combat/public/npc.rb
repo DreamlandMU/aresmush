@@ -44,5 +44,8 @@ module AresMUSH
     def wound_modifier
       self.ability_rating("Wounds") || 0
     end
+    def KO_Threshold
+      self.ability_rating("KO_Threshold") || -7
+    end
   end
 end

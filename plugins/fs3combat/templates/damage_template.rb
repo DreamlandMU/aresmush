@@ -12,10 +12,12 @@ module AresMUSH
       end      
       
       def severity(d)
-        initial_sev = d.initial_severity
-        current_sev = FS3Combat.display_severity(d.current_severity)
-        "#{current_sev} (#{initial_sev[0..2]})"
+       initial_sev = d.initial_severity
+       current_sev = FS3Combat.display_severity(d.current_severity)
+       initial_sev_formatted = FS3Combat.display_severity(initial_sev) # Use the same method for initial severity
+       "#{current_sev} (#{initial_sev_formatted})"
       end
+
       
       def treatable(d)
         d.is_treatable? ? t('global.y') : '-'

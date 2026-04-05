@@ -14,7 +14,8 @@ module AresMUSH
         "reload" => ReloadAction,
         "treat" => TreatAction,
         "subdue" => SubdueAction,
-        "suppress" => SuppressAction
+        "suppress" => SuppressAction,
+        "protect" => ProtectAction
       }
       if (FS3Combat.custom_actions)
         FS3Combat.custom_actions.each do |k, v|
@@ -45,7 +46,6 @@ module AresMUSH
     def self.damage_table
       Global.read_config("fs3combat", "damage_table")
     end
-    
     def self.reset_for_new_turn(combatant)
       FS3Combat.custom_new_turn_reset(combatant)
       
@@ -58,6 +58,17 @@ module AresMUSH
       if (!combatant.is_subdued?)
         combatant.update(subdued_by: nil)
       end
+
+      # Clear protection at the start of a new turn
+  combatant.combat.active_combatants.each do |c|
+    if c.protectors.include?(combatant.id)
+      # Ensure the protector remains on the "protect" action
+      if combatant.action_klass != "AresMUSH::FS3Combat::ProtectAction"
+        c.remove_protector(combatant)
+        combatant.log("#{combatant.name} is no longer protecting #{c.name} (ID: #{c.id})")
+      end
+    end
+  end      
             
       combatant.update(luck: nil)
       combatant.update(posed: false)
@@ -74,7 +85,6 @@ module AresMUSH
         combatant.update(damaged_by: [])
       end
     end
-    
     def self.reset_stress(combatant)
       return if combatant.stress == 0
 
@@ -87,16 +97,21 @@ module AresMUSH
     end
     
     def self.check_for_ko(combatant)
-      return if (!combatant.freshly_damaged || combatant.is_ko || combatant.total_damage_mod > -1.0)
-
-      combatant.log "Checking for KO: #{combatant.name} damaged=#{combatant.freshly_damaged} ko=#{combatant.is_ko} mod=#{combatant.total_damage_mod}"
-      
-      if (combatant.is_npc? && (combatant.total_damage_mod <= -7))
-        combatant.log "#{combatant.name} auto-KO'd."
-        roll = 0
-      else
-        roll = FS3Combat.make_ko_roll(combatant)
-      end
+		return if (!combatant.freshly_damaged || combatant.is_ko || combatant.total_damage_mod > -1.0)
+    combatant.log "Checking for KO: #{combatant.name} damaged=#{combatant.freshly_damaged} ko=#{combatant.is_ko} mod=#{combatant.total_damage_mod}"
+  
+	if combatant.is_npc?
+      npc_auto_ko_threshold = combatant.npc.KO_Threshold
+  
+     if combatant.total_damage_mod <= npc_auto_ko_threshold
+            combatant.log "#{combatant.name} auto-KO'd. Threshold was: #{npc_auto_ko_threshold}"
+            roll = 0
+  else
+    roll = FS3Combat.make_ko_roll(combatant)
+  end
+else
+  roll = FS3Combat.make_ko_roll(combatant)
+end
       
       if (roll <= 0)
         combatant.update(is_ko: true)
@@ -104,6 +119,12 @@ module AresMUSH
         combatant.update(action_args: nil)
         damaged_by = combatant.damaged_by.join(", ")
         FS3Combat.emit_to_combat combatant.combat, t('fs3combat.is_koed', :name => combatant.name, :damaged_by => damaged_by), nil, true
+        combatant.combat.active_combatants.each do |c|
+          if c.protectors.include?(combatant.id)
+            c.remove_protector(combatant)
+            combatant.log("#{combatant.name} (ID: #{combatant.id}) removed from protector list of #{c.name} (ID: #{c.id})")
+          end
+        end
       end
     end
       
@@ -119,8 +140,8 @@ module AresMUSH
     
     def self.make_ko_roll(combatant, ko_mod = 0)
       pc_mod = combatant.is_npc? ? 0 : Global.read_config("fs3combat", "pc_knockout_bonus")
-
-      composure = Global.read_config("fs3combat", "composure_skill")
+    
+      koskill = Global.read_config("fs3combat", "knockout_skill")
       
       if (combatant.is_in_vehicle?)
         vehicle = combatant.vehicle
@@ -132,12 +153,12 @@ module AresMUSH
       damage_mod = combatant.total_damage_mod
       
       mod = damage_mod + damage_mod + pc_mod + vehicle_mod + ko_mod
-      roll = combatant.roll_ability(composure, mod)
+      roll = combatant.roll_ability(koskill, mod)
       
-      combatant.log "#{combatant.name} checking KO. roll=#{roll} composure=#{composure} damage=#{damage_mod} vehicle=#{vehicle_mod} pc=#{pc_mod} mod=#{ko_mod}"
+      combatant.log "#{combatant.name} checking KO. roll=#{roll} knockoutskill=#{koskill} damage=#{damage_mod} vehicle=#{vehicle_mod} pc=#{pc_mod} mod=#{ko_mod}"
       
       roll
-    end
+      end
         
     def self.ai_action(combat, combatant, enactor = nil)
       if (combatant.is_subdued?)
@@ -261,8 +282,10 @@ module AresMUSH
     def self.stopped_by_cover?(attacker_net_successes, combatant)
       case attacker_net_successes
       when 0, 1
-        cover_chance = 50
+        cover_chance = 75
       when 2
+        cover_chance = 50
+      when 3
         cover_chance = 25
       else
         cover_chance = 0
@@ -309,9 +332,25 @@ module AresMUSH
       
       roll <= 0
     end
+
+    def self.resolve_counter_attack(defender, attacker)
+      defender.log "Counter-attack by #{defender.name} against #{attacker.name}."
+      
+      # Perform the counter-attack with is_counter set to true
+      attack_result = FS3Combat.attack_target(defender, attacker, 0, nil, false, true)
+      
+      # Generate messages based on the attack result
+      counter_attack_messages = []
+      counter_attack_messages << t('fs3combat.counter_attack', :defender => defender.name, :attacker => attacker.name)
+      counter_attack_messages.concat(attack_result)
+      
+      # Log the result and return messages
+      defender.log "Counter-attack result: #{counter_attack_messages.join(' ')}"
+      counter_attack_messages
+    end
     
     # Returns { hit: true/false, attacker_net_successes: #, message: explains miss reason }
-    def self.determine_attack_margin(combatant, target, mod = 0, called_shot = nil, mount_hit = false)
+    def self.determine_attack_margin(combatant, target, mod = 0, called_shot = nil, mount_hit = false, is_counter = false)
       weapon = combatant.weapon
       attack_roll = FS3Combat.roll_attack(combatant, target, mod - combatant.recoil)
       defense_roll = FS3Combat.roll_defense(target, weapon)
@@ -322,10 +361,12 @@ module AresMUSH
       weapon_type = FS3Combat.weapon_stat(combatant.weapon, "weapon_type")
       hit_mount = FS3Combat.hit_mount?(combatant, target, attacker_net_successes, mount_hit)
       
+      messages = []
+    
       if (attack_roll <= 0)
-        message = t('fs3combat.attack_missed', :name => combatant.name, :target => target.name, :weapon => weapon)
+        messages << t('fs3combat.attack_missed', :name => combatant.name, :target => target.name, :weapon => weapon)
       elsif (called_shot && (attacker_net_successes > 0) && (attacker_net_successes < 2))
-        message = t('fs3combat.attack_near_miss', :name => combatant.name, :target => target.name, :weapon => weapon)
+        messages << t('fs3combat.attack_near_miss', :name => combatant.name, :target => target.name, :weapon => weapon)
       elsif (hit_mount)
         mount_ko = FS3Combat.resolve_mount_ko(target)
         if (mount_ko)
@@ -336,65 +377,116 @@ module AresMUSH
         else
           mount_effect =  t('fs3combat.mount_injured')
         end
-
-        message = t('fs3combat.attack_hits_mount', :name => combatant.name, :target => target.name, :weapon => weapon, :effect => mount_effect)
+        messages << t('fs3combat.attack_hits_mount', :name => combatant.name, :target => target.name, :weapon => weapon, :effect => mount_effect)
       elsif (stopped_by_cover)
-        message = t('fs3combat.attack_hits_cover', :name => combatant.name, :target => target.name, :weapon => weapon)
+        messages << t('fs3combat.attack_hits_cover', :name => combatant.name, :target => target.name, :weapon => weapon)
       elsif (attacker_net_successes < 0)
         # Only can evade when being attacked by melee or when in a vehicle.
         if (weapon_type == 'Melee' || target.is_in_vehicle?)
           if (attacker_net_successes < -2)
-            message = t('fs3combat.attack_dodged_easily', :name => combatant.name, :target => target.name, :weapon => weapon)
+            messages << t('fs3combat.attack_dodged_easily', :name => combatant.name, :target => target.name, :weapon => weapon)
           else
-            message = t('fs3combat.attack_dodged', :name => combatant.name, :target => target.name, :weapon => weapon)
+            messages << t('fs3combat.attack_dodged', :name => combatant.name, :target => target.name, :weapon => weapon)
           end
         else
-            message = t('fs3combat.attack_near_miss', :name => combatant.name, :target => target.name, :weapon => weapon)
+            messages << t('fs3combat.attack_near_miss', :name => combatant.name, :target => target.name, :weapon => weapon)
         end
       else
         hit = true
       end
       
-      
       combatant.log "Attack Margin: mod=#{mod} called=#{called_shot} " +
-      " attack=#{attack_roll} defense=#{defense_roll} hit=#{hit} cover=#{stopped_by_cover} result=#{message}"
+      " attack=#{attack_roll} defense=#{defense_roll} hit=#{hit} cover=#{stopped_by_cover} result=#{messages.join(' ')}"
       
+      # Prevent counter-attacking a counter-attack
+      if (!is_counter && weapon_type == "Melee" && FS3Combat.weapon_stat(target.weapon, "weapon_type").titlecase == "Melee" && attacker_net_successes <= -3)
+        counter_attack_messages = FS3Combat.resolve_counter_attack(target, combatant)
+        messages.concat(counter_attack_messages)
+      end
       
       {
-        message: message,
+        message: messages.join(' '),
         hit: hit,
         attacker_net_successes: attacker_net_successes
       }
     end
       
-    def self.attack_target(combatant, target, mod = 0, called_shot = nil, crew_hit = false, mount_hit = false)
+    def self.attack_target(combatant, target, mod = 0, called_shot = nil, crew_hit = false, is_counter = false)
       return [ t('fs3combat.has_no_target', :name => combatant.name) ] if !target
-      
-      # If targeting a passenger, adjust target to the pilot instead.  Unless of course there isn't one.
+    
+      combatant.log("Initial target: #{target.name} (ID: #{target.id})")
+    
+      # If targeting a passenger, adjust target to the pilot instead. Unless of course there isn't one.
       if (target.riding_in && target.riding_in.pilot)
         target = target.riding_in.pilot
+        combatant.log("Attack redirected to pilot: #{target.name} (ID: #{target.id})")
       end
-      
-      margin = FS3Combat.determine_attack_margin(combatant, target, mod, called_shot, mount_hit)
+    
+      redirect_message = nil
+  # If the target is being protected, log all protectors and redirect the attack to a random active protector.
+  if target.protectors.any?
+    all_protectors = target.get_protectors.compact # Filter out any nil values
+    active_protectors = all_protectors.select { |p| p.action_klass == "AresMUSH::FS3Combat::ProtectAction" }
+    inactive_protectors = all_protectors.reject { |p| p.action_klass == "AresMUSH::FS3Combat::ProtectAction" }
 
+    combatant.log("All protectors for #{target.name} (ID: #{target.id}): #{all_protectors.map(&:name).join(', ')}")
+    combatant.log("Active protectors: #{active_protectors.map(&:name).join(', ')}")
+    combatant.log("Inactive protectors: #{inactive_protectors.map(&:name).join(', ')}")
+
+    if active_protectors.any?
+      protector = active_protectors.sample
+      combatant.log("Target #{target.name} (ID: #{target.id}) is being protected by #{protector.name} (ID: #{protector.id})")
+      redirect_message = t('fs3combat.attack_redirected', :attacker => combatant.name, :target => target.name, :protector => protector.name)
+      target = protector
+    else
+      combatant.log("Target #{target.name} (ID: #{target.id}) has protectors, but none are currently protecting.")
+    end
+  else
+    combatant.log("Target #{target.name} (ID: #{target.id}) is not being protected")
+  end
+
+  combatant.log("Final target after redirection: #{target.name} (ID: #{target.id})")
+    
+      # Determine the attack margin.
+      margin = FS3Combat.determine_attack_margin(combatant, target, mod, called_shot, is_counter)
+      combatant.log("Attack margin determined: #{margin[:message]}")
+    
       # Update recoil after determining the attack success but before returning out for a miss
       recoil = FS3Combat.weapon_stat(combatant.weapon, "recoil")
       combatant.update(recoil: combatant.recoil + recoil)
-
-      return [margin[:message]] if !margin[:hit]
+      combatant.log("Updated recoil for #{combatant.name}: #{combatant.recoil}")
+    
+      # Collect messages to return.
+      messages = []
+      messages << redirect_message.strip if redirect_message && !redirect_message.strip.empty?
+      messages << margin[:message].strip if !margin[:message].strip.empty?
+    
+      combatant.log("Messages before attack resolution: #{messages.inspect}")
+      
+      return messages if !margin[:hit]
     
       weapon = combatant.weapon
-      
       attacker_net_successes = margin[:attacker_net_successes]
-            
-      FS3Combat.resolve_attack(combatant, combatant.name, target, weapon, attacker_net_successes, called_shot, crew_hit)
-    end
     
+      # Resolve the attack against the (possibly new) target.
+      attack_messages = FS3Combat.resolve_attack(combatant, combatant.name, target, weapon, attacker_net_successes, called_shot, crew_hit)
+      attack_messages.each do |msg|
+        stripped_msg = msg.strip
+        messages << stripped_msg if !stripped_msg.empty?
+      end
+    
+      combatant.log("Messages after attack resolution: #{messages.inspect}")
+    
+      messages
+    end
+
+
     # Attacker may be nil for automated attacks like shrapnel
-    def self.resolve_attack(attacker, attack_name, target, weapon, attacker_net_successes = 0, called_shot = nil, crew_hit = false)
+    def self.resolve_attack(attacker, attack_name, target, weapon, attacker_net_successes = 0, called_shot = nil, crew_hit = false, is_counter = false)
       hitloc = FS3Combat.determine_hitloc(target, attacker_net_successes, called_shot, crew_hit)
       armor = FS3Combat.determine_armor(target, hitloc, weapon, attacker_net_successes, crew_hit)
         
+      messages = []
       
       if (armor >= 100)
         message = t('fs3combat.attack_stopped_by_armor', :name => attack_name, :weapon => weapon, :target => target.name, :hitloc => hitloc) 
@@ -443,8 +535,6 @@ module AresMUSH
       end
             
       target.add_stress(1)
-      
-      messages = []
       
       weapon_type = FS3Combat.weapon_stat(weapon, 'weapon_type')
       if (weapon_type == "Explosive")

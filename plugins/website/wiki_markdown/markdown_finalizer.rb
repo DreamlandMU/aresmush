@@ -111,11 +111,13 @@ module AresMUSH
             toc_links << "<div class=\"toc\">\n<h4>Table of Contents</h4>"
             toc_links << "<ul>"
             toc.each do |heading, sub_headings|
-              toc_links << "<li><a href=\"\##{clean_anchor(heading)}\">#{heading.titleize}</a></li>"
+#              toc_links << "<li><a href=\"\##{clean_anchor(heading)}\">#{heading.titleize}</a></li>"
+              toc_links << "<li><a href=\"\##{clean_anchor(heading)}\">#{heading}</a></li>"
               if (sub_headings.any?)
                 toc_links << "<ul>"
                 sub_headings.each do |sub_head|
-                  toc_links << "<li><a href=\"\##{clean_anchor(sub_head)}\">#{sub_head.titleize}</a></li>"                        
+#                  toc_links << "<li><a href=\"\##{clean_anchor(sub_head)}\">#{sub_head.titleize}</a></li>"  
+                  toc_links << "<li><a href=\"\##{clean_anchor(sub_head)}\">#{sub_head}</a></li>"                      
                 end
                 toc_links << "</ul>"
               end

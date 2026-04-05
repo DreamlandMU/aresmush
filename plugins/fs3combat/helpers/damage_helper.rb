@@ -91,7 +91,6 @@ module AresMUSH
      
      def self.max_patients(char)
        rating = FS3Skills.ability_rating(char, FS3Combat.healing_skill)
-       rating / 2
      end
      
      def self.heal_wounds(char)

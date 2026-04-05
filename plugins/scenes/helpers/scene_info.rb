@@ -98,7 +98,18 @@ module AresMUSH
           details = room.details
         end
       else
-        description = location
+        exact_room = location.to_s.split("/")
+        exact_match = matched_rooms.select {|r| r.name == exact_room[1]}
+
+        if (exact_match.count == 1)
+          room = exact_match.first
+          description = "%xh#{room.name}%xn%R#{room.description}"
+          area = room.area
+          vistas = room.vistas
+          details = room.details
+        else
+          description = location
+        end
       end
             
       scene.update(location: location)

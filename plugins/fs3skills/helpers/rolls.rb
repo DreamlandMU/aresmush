@@ -16,8 +16,6 @@ module AresMUSH
       roll
     end
     
-
-        
     # Rolls a number of FS3 dice and returns the raw die results.
     def self.roll_dice(dice)
       if (dice > 30)
@@ -41,7 +39,6 @@ module AresMUSH
       return 0
     end
     
-
     def self.emit_results(message, client, room, is_private)
       if (is_private)
         client.emit message
@@ -62,19 +59,18 @@ module AresMUSH
     
     # Returns either { message: roll_result_message }  or  { error: error_message }
     def self.determine_web_roll_result(request, enactor)
-      
       roll_str = request.args[:roll_string]
+      roll_reason = request.args[:roll_reason]
       vs_roll1 = request.args[:vs_roll1] || ""
       vs_roll2 = request.args[:vs_roll2] || ""
       vs_name1 = (request.args[:vs_name1] || "").titlecase
       vs_name2 = (request.args[:vs_name2] || "").titlecase
       pc_name = request.args[:pc_name] || ""
       pc_skill = request.args[:pc_skill] || ""
+      is_group_roll = request.args[:is_group_roll] == 'true'
+      group_roll_names = request.args[:group_roll_names] || ""
       no_draw = request.args[:no_draw] || false
       
-      # ------------------
-      # VS ROLL
-      # ------------------
       if (!vs_roll1.blank?)
         result = ClassTargetFinder.find(vs_name1, Character, enactor)
         model1 = result.target
@@ -131,40 +127,58 @@ module AresMUSH
            :result => results,
            :roller => enactor.name
         )  
-
-      # ------------------
-      # PC ROLL
-      # ------------------
       elsif (!pc_name.blank?)
         char = Character.find_one_by_name(pc_name)
-
+  
         if (!char && !pc_skill.is_integer?)
           pc_skill = "3"
         end
-
+  
         roll = FS3Skills.parse_and_roll(char, pc_skill)
         roll_result = FS3Skills.get_success_level(roll)
         success_title = FS3Skills.get_success_title(roll_result)
-        message = t('fs3skills.simple_roll_result', 
-#          :name => char ? char.name : "#{pc_name} (#{enactor.name})",
+        if (success_title == t('fs3skills.amazing_success'))
+          Achievements.award_achievement(char, 'fs3-are-amazing') 
+        end
+        if (success_title == t('fs3skills.embarrassing_failure'))
+          Achievements.award_achievement(char, 'fs3-are-embarrassed')
+        end
+        message_key = roll_reason.strip.downcase == "no reason" ? 'fs3skills.simple_roll_result_no_reason' : 'fs3skills.simple_roll_result'
+        message = t(message_key, 
           :name => char ? char.name : "#{pc_name}",
           :roll => pc_skill,
+          :reason => roll_reason,
           :dice => FS3Skills.print_dice(roll),
           :success => success_title,
           :roller => enactor.name
           )
-          
-      # ------------------
-      # SELF ROLL
-      # ------------------
-      
+      elsif (is_group_roll)
+        names = group_roll_names.split(' ')
+        results = []
+        names.each do |name|
+          char = Character.named(name)
+          if (!char)
+            return { error: t('fs3skills.character_not_found', :name => name) }
+          end
+          roll = FS3Skills.parse_and_roll(char, roll_str)
+          results << { :name => char.name, :roll => roll }
+        end
+        message = FS3Skills.format_group_roll_results(results, roll_str, roll_reason, enactor)
       else
         roll = FS3Skills.parse_and_roll(enactor, roll_str)
         roll_result = FS3Skills.get_success_level(roll)
         success_title = FS3Skills.get_success_title(roll_result)
-        message = t('fs3skills.simple_roll_result', 
+        if (success_title == t('fs3skills.amazing_success'))
+          Achievements.award_achievement(enactor, 'fs3-are-amazing')
+        end
+        if (success_title == t('fs3skills.embarrassing_failure'))
+          Achievements.award_achievement(enactor, 'fs3-are-embarrassed')
+        end
+        message_key = roll_reason.strip.downcase == "no reason" ? 'fs3skills.simple_roll_result_no_reason' : 'fs3skills.simple_roll_result'
+        message = t(message_key, 
           :name => enactor.name,
           :roll => roll_str,
+          :reason => roll_reason,
           :dice => FS3Skills.print_dice(roll),
           :success => success_title,
           :roller => enactor.name
@@ -172,6 +186,48 @@ module AresMUSH
       end
       
       return { message: message }
+    end
+
+    def self.format_group_roll_results(results, roll_str, roll_reason, enactor)
+      message_key = roll_reason.strip.downcase == "no reason" ? 'fs3skills.group_roll_start_no_reason' : 'fs3skills.group_roll_start_reason'
+      message = t(message_key, :roller => enactor.name, :roll => roll_str, :reason => roll_reason)
+    
+      results.each do |r|
+        success_level = FS3Skills.get_success_level(r[:roll])
+        success_title = FS3Skills.get_success_title(success_level)
+        message << "\n#{t('fs3skills.group_roll_individual_result', :name => r[:name], :success => success_title, :dice => FS3Skills.print_dice(r[:roll]))}"
+      end
+      
+      best_roll = results.max_by { |r| FS3Skills.get_success_level(r[:roll]) }
+      best_success_level = FS3Skills.get_success_level(best_roll[:roll])
+      
+      if best_success_level > 0
+        message << "\n#{t('fs3skills.group_roll_best_result', :name => best_roll[:name], :success => FS3Skills.get_success_title(best_success_level))}"
+        
+        if best_success_level <= 2
+          minor_successes = results.count { |r| FS3Skills.get_success_level(r[:roll]) > 0 && FS3Skills.get_success_level(r[:roll]) <= best_success_level } - 1
+          complications_avoided = results.count { |r| FS3Skills.get_success_level(r[:roll]) <= 0 }
+          total_minor = minor_successes + complications_avoided
+          if total_minor > 0
+            message << "\n#{total_minor == 1 ? 
+              t('fs3skills.group_roll_minor_success', :count => total_minor) :
+              t('fs3skills.group_roll_minor_successes', :count => total_minor)}"
+          end
+        else
+          complications = results.count { |r| FS3Skills.get_success_level(r[:roll]) < 3 }
+          if complications > 0
+            message << "\n#{complications == 1 ? 
+              t('fs3skills.group_roll_complication_avoided', :complications => complications) :
+              t('fs3skills.group_roll_complications_avoided', :complications => complications)}"
+          end
+        end
+      elsif best_success_level == -1
+        message << "\n#{t('fs3skills.group_roll_all_botched')}"
+      else
+        message << "\n#{t('fs3skills.group_roll_complication')}"
+      end
+      
+      message
     end
   end
 end

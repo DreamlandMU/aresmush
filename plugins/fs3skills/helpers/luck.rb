@@ -6,15 +6,19 @@ module AresMUSH
     
     def self.modify_luck(char, amount)
       max_luck = Global.read_config("fs3skills", "max_luck")
-      luck = char.luck + amount
+      luck = char.fs3_luck + amount
       luck = [max_luck, luck].min
       luck = [0, luck].max
       char.update(fs3_luck: luck)
     end
     
-    def self.spend_luck(char, reason, scene)
-      char.spend_luck(1)
-      message = t('fs3skills.luck_point_spent', :name => char.name, :reason => reason)
+    def self.spend_luck(char, reason, scene, amount)
+      char.spend_luck(amount)
+      message = if amount == 1
+                  t('fs3skills.luck_point_spent', :name => char.name, :reason => reason)
+                else
+                  t('fs3skills.luck_points_spent', :name => char.name, :amount => amount, :reason => reason)
+                end
 
       if (scene)
         scene.room.emit_ooc message
@@ -33,7 +37,7 @@ module AresMUSH
         end
       end
       
-      Global.logger.info "#{char.name} spent luck on #{reason}."
+      Global.logger.info "#{char.name} spent #{amount} luck points on #{reason}."
     end
   end
 end

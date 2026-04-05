@@ -6,6 +6,7 @@ module AresMUSH
         enactor = request.enactor
         sender_name = request.args[:sender]
         reason = request.args[:reason]
+        amount = request.args[:amount].to_i
         
         request.log_request
         
@@ -33,10 +34,11 @@ module AresMUSH
           return { error: t('scenes.scene_already_completed') }
         end
         
-        if (sender.luck < 1)
+        if (sender.fs3_luck < amount)
           return { error: t('fs3skills.not_enough_points') }
         end
-        FS3Skills.spend_luck(sender, reason, scene)
+        
+        FS3Skills.spend_luck(sender, reason, scene, amount)
        
         {
         }
