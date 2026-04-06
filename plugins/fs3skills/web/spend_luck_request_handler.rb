@@ -2,7 +2,7 @@ module AresMUSH
   module FS3Skills
     class SpendLuckRequestHandler
       def handle(request)
-        scene = Scene[request.args[:scene_id]]
+        scene = Scene[request.args['scene_id']]
         enactor = request.enactor
         sender_name = request.args[:sender]
         reason = request.args[:reason]

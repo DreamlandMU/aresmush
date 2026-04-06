@@ -192,7 +192,11 @@ module AresMUSH
          end
        end  
      end
-     
+   
+    def self.export_damage(char)
+     template = DamageTemplate.new(char)
+     template.render
+    end  
   
   end
 end
