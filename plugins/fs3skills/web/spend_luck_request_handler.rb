@@ -4,9 +4,9 @@ module AresMUSH
       def handle(request)
         scene = Scene[request.args['scene_id']]
         enactor = request.enactor
-        sender_name = request.args[:sender]
-        reason = request.args[:reason]
-        amount = request.args[:amount].to_i
+        sender_name = request.args['sender']
+        reason = request.args['reason']
+        amount = request.args['amount'].to_i
         
         request.log_request
         

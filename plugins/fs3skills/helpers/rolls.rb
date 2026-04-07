@@ -59,17 +59,17 @@ module AresMUSH
     
     # Returns either { message: roll_result_message }  or  { error: error_message }
     def self.determine_web_roll_result(request, enactor)
-      roll_str = request.args[:roll_string]
-      roll_reason = request.args[:roll_reason]
-      vs_roll1 = request.args[:vs_roll1] || ""
-      vs_roll2 = request.args[:vs_roll2] || ""
-      vs_name1 = (request.args[:vs_name1] || "").titlecase
-      vs_name2 = (request.args[:vs_name2] || "").titlecase
-      pc_name = request.args[:pc_name] || ""
-      pc_skill = request.args[:pc_skill] || ""
-      is_group_roll = request.args[:is_group_roll] == 'true'
-      group_roll_names = request.args[:group_roll_names] || ""
-      no_draw = request.args[:no_draw] || false
+      roll_str = request.args['roll_string']
+      roll_reason = request.args['roll_reason']
+      vs_roll1 = request.args['vs_roll1'] || ""
+      vs_roll2 = request.args['vs_roll2'] || ""
+      vs_name1 = (request.args['vs_name1'] || "").titlecase
+      vs_name2 = (request.args['vs_name2'] || "").titlecase
+      pc_name = request.args['pc_name'] || ""
+      pc_skill = request.args['pc_skill'] || ""
+      is_group_roll = request.args['is_group_roll'] == 'true'
+      group_roll_names = request.args['group_roll_names'] || ""
+      no_draw = request.args['no_draw'] || false
       
       if (!vs_roll1.blank?)
         result = ClassTargetFinder.find(vs_name1, Character, enactor)

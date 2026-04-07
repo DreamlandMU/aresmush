@@ -2,7 +2,7 @@ module AresMUSH
   module FS3Skills
     class CharAltAbilitiesRequestHandler
       def handle(request)
-        char = Character.find_one_by_name request.args[:id]
+        char = Character.find_one_by_name request.args['id']
         enactor = request.enactor
 
         if (!char)
@@ -25,6 +25,7 @@ module AresMUSH
             end
           end
           luckList[alt.name] = alt.fs3_luck.to_i
+          Global.logger.info "#{alt.name}: #{lucklist[alt.name]}"
         end
 
         {
