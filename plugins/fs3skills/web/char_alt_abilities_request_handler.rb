@@ -25,7 +25,6 @@ module AresMUSH
             end
           end
           luckList[alt.name] = alt.fs3_luck.to_i
-          Global.logger.info "#{alt.name}: #{lucklist[alt.name]}"
         end
 
         {
