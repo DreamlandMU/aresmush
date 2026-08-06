@@ -24,7 +24,7 @@ module AresMUSH
                 alt_data << {
                 name: alt.name,
                 id: alt.id,
-                icon: Website.icon_for_char(alt)
+                avatar: Website.avatar_info(alt)
                 }
                 if (alt != enactor)
                   notifications += alt.unread_notifications.count
@@ -60,8 +60,7 @@ module AresMUSH
           notification_count: notifications == 0 ? nil : notifications,
           allow_web_tour: Login.allow_web_tour?,
           allow_web_registration: Login.allow_web_registration?,
-          alts: alt_data,
-          editor: (enactor ? enactor.website_editor : nil) || "WYSIWYG",
+          alts: alt_data
           
         }
       end

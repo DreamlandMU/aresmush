@@ -91,14 +91,14 @@ module AresMUSH
 
       title = title ? "#{title}%xn" : nil
       channel_message = channel.add_to_history "#{title} #{original_msg}", enactor
-      channel.characters.each do |c|
-        if (!Channels.is_muted?(c, channel) && !c.has_channel_blocked?(enactor))
-          
-          title_display = (title && Channels.show_titles?(c, channel)) ? "#{title} " : ""
-          formatted_msg = "#{Channels.display_name(c, channel)} #{title_display}#{original_msg}"
-          
-          Login.emit_if_logged_in(c, formatted_msg)
-        end
+      channel.characters.select { |c| Login.is_online?(c) }.each do |c|
+        next if Channels.is_muted?(c, channel)
+        next if c.has_channel_blocked?(enactor)
+
+        title_display = (title && Channels.show_titles?(c, channel)) ? "#{title} " : ""
+        formatted_msg = "#{Channels.display_name(c, channel)} #{title_display}#{original_msg}"
+        
+        Login.emit_if_logged_in(c, formatted_msg)
       end
       
       formatted_msg = "#{title} #{original_msg}"
@@ -107,15 +107,20 @@ module AresMUSH
         id: channel.id,
         key: channel.name.downcase,
         title: channel.name,
-        author: {name: enactor.name, icon: Website.icon_for_char(enactor), id: enactor.id},
+        author: {name: enactor.name, avatar: Website.avatar_info(enactor), id: enactor.id},
         message: Website.format_markdown_for_html(formatted_msg),
         message_id: channel_message.id,
         is_page: false
       }
       
+      web_chars_with_alts_on_chan = Global.client_monitor.web_clients
+                .map { |c| c.char }
+                .uniq
+                .select { |c| c && Channels.has_alt_on_channel?(c, channel) }
+      
       Global.client_monitor.notify_web_clients(:new_chat, "#{data.to_json}", true) do |char|
         char && 
-        Channels.has_alt_on_channel?(char, channel) && 
+        web_chars_with_alts_on_chan.include?(char) &&
         !Channels.is_muted?(char, channel) &&
         !char.has_channel_blocked?(enactor)
       end
@@ -400,7 +405,7 @@ module AresMUSH
             timestamp: OOCTime.local_short_date_and_time(enactor, m.created_at),
             author: {
               name: m.author_name,
-              icon: m.author ? Website.icon_for_char(m.author) : nil }
+              avatar: m.author ? Website.avatar_info(m.author) : nil }
             }
           }
         end
@@ -422,7 +427,7 @@ module AresMUSH
           who: Channels.channel_who(channel).map { |w| {
             name: w.name,
             ooc_name: w.ooc_name,
-            icon: Website.icon_for_char(w),
+            avatar: Website.avatar_info(w),
             muted: Channels.is_muted?(w, channel),
             status: Website.activity_status(w)
             }},
@@ -430,7 +435,7 @@ module AresMUSH
             .sort_by { |a| [ a.name == enactor.name ? 0 : 1, a.name ]}
             .map { |a| {
               name: a.name,
-              icon: Website.icon_for_char(a),
+              avatar: Website.avatar_info(a),
               id: a.id
               }},
               messages: messages,

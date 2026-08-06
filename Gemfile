@@ -6,7 +6,7 @@ gem 'json', '~> 2.3.1'
 gem 'logger', "~>1.6.4"
 
 # Misc formatting utils, mattr_accessor, date utils, etc.
-gem "activesupport", "8.0.3"
+gem "activesupport", "~>8.0.4.1"
 
 # Ansi codes
 gem 'ansi', '~> 1.5'
@@ -15,7 +15,7 @@ gem 'ansi', '~> 1.5'
 gem 'ohm', '~> 3.1.1'
 
 # engine webserver
-gem 'rack', '~> 3.2.5'
+gem 'rack', '~> 3.2.6'
 gem 'rackup', '~> 2.3.1'
 gem 'sinatra', '>= 4.2.1'
 gem 'sinatra-cross_origin', '~>0.4.0'
@@ -25,7 +25,7 @@ gem 'thin', "~> 2.0.1"
 gem 'erubis', '~> 2.7.0'
 
 # Pasword hashing
-gem 'bcrypt', '~> 3.1.11'
+gem 'bcrypt', '~> 3.1.22'
 
 # Server engine
 gem 'eventmachine', '~> 1.2.7'

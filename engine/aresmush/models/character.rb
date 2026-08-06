@@ -31,6 +31,7 @@ module AresMUSH
     set :roles, "AresMUSH::Role"
     
     before_save :save_upcase
+    before_delete :engine_on_delete
     
     def is_statue?
       self.is_statue
@@ -81,6 +82,14 @@ module AresMUSH
       Handle.find_any_by_name(handle.name).map { |h| h.character }
     end
 
+    def self.is_alt?(char1, char2)
+      return false if !char1 || !char2
+      return true if char1.name == char2.name
+      return false if !char1.handle
+      return false if !char2.handle
+      char1.handle.name == char2.handle.name
+    end
+    
     # -----------------------------------
     # INSTANCE METHODS
     # -----------------------------------
@@ -128,11 +137,6 @@ module AresMUSH
       end
     end
     
-    def save_upcase
-      self.name_upcase = self.name ? self.name.upcase : nil
-      self.alias_upcase = self.alias ? self.alias.upcase : nil
-    end
-    
     def name_and_alias
       if (self.alias.blank?)
         name
@@ -158,8 +162,47 @@ module AresMUSH
          .any? { |b| b.blocked == target }
     end
     
+    def delete_blocks
+      self.blocks.each { |b| b.destroy }
+      BlockRecord.all.select { |b| b.blocked == self }.each { |b| b.destroy }
+    end    
+    
     def self.random_link_code
       (0...8).map { (33 + rand(94)).chr }.join
     end 
+    
+    def get_or_create_read_tracker
+      return self.read_tracker if self.read_tracker
+      tracker = ReadTracker.create(character: self)
+      self.update(read_tracker: tracker)
+      return tracker
+    end  
+
+    def alt_of?(other_char)
+      Character.is_alt?(self, other_char)
+    end
+
+    # -----------------------------------
+    # CALLBACKS
+    # -----------------------------------
+    
+    def save_upcase
+      self.name_upcase = self.name ? self.name.upcase : nil
+      self.alias_upcase = self.alias ? self.alias.upcase : nil
+    end
+    
+    def engine_on_delete
+      if self.read_tracker
+        self.read_tracker.delete
+      end
+      
+      if self.handle
+        self.handle.delete
+      end
+      
+      self.delete_blocks
+    end
+    
+    
   end
 end

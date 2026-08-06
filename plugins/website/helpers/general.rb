@@ -205,6 +205,7 @@ module AresMUSH
             'profile-custom.hbs' => File.join(web_code_path, 'components', 'profile-custom.hbs'),  
             'profile-custom.js' => File.join(web_code_path, 'components', 'profile-custom.js'),
             'custom_char_fields.rb' => File.join(plugin_code_path, 'profile', 'custom_char_fields.rb'),
+            'custom_icon_classes.rb' => File.join(plugin_code_path, 'website', 'custom_icon_classes.rb'),
           }
         },
 
@@ -255,6 +256,8 @@ module AresMUSH
             'live-scene-custom-play.js' => File.join(web_code_path, 'components', 'live-scene-custom-play.js'),
             'live-scene-custom-scenepose.hbs' => File.join(web_code_path, 'components', 'live-scene-custom-scenepose.hbs'),  
             'live-scene-custom-scenepose.js' => File.join(web_code_path, 'components', 'live-scene-custom-scenepose.js'),
+            'play-custom-sidebar.hbs' => File.join(web_code_path, 'components', 'play-custom-sidebar.hbs'),  
+            'play-custom-sidebar.js' => File.join(web_code_path, 'components', 'play-custom-sidebar.js'),
             'custom_scene_data.rb' => File.join(plugin_code_path, 'scenes', 'custom_scene_data.rb'),
             
           }
@@ -273,8 +276,6 @@ module AresMUSH
             'custom_char_card.rb' => File.join(plugin_code_path, 'scenes', 'custom_char_card.rb'),
           }
         },
-        
-        
         
         {
           name: "Combat Actions",
@@ -318,6 +319,14 @@ module AresMUSH
             'sidebar-custom.js' => File.join(web_code_path, 'components', 'sidebar-custom.js'),
             'custom_web_data.rb' => File.join(plugin_code_path, 'website', 'custom_web_data.rb'),
           },
+        },
+        
+        {
+          name: "Who Fields",
+          help: "https://aresmush.com/tutorials/code/hooks/who-fields.html",
+          files: {
+            'custom_who_fields.rb' => File.join(plugin_code_path, 'who', 'custom_who_fields.rb'),
+          }
         },
           
         {
